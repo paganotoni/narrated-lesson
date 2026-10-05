@@ -1,0 +1,463 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Symbol Narrated Lesson PoC</title>
+<style>html,body{margin:0}img{max-width:100%}[hidden]{display:none!important}@font-face{font-family:Montserrat;font-style:normal;font-weight:300 700;font-display:swap;src:url(fonts/montserrat.woff2) format("woff2")}</style>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<style>
+/* Layout: one 16:9 lesson stage (1920x1080, scaled to fit) with captions burned into the frame and a compact player bar underneath. Single dark look by choice: the Symbol cover ground. */
+:root{
+  color-scheme:dark;
+  --navy-900:#142E4F; --navy-700:#2F4F76; --blue-500:#1185E5; --cyan-400:#11B6E5; --alert-500:#FF2B5E;
+  --ice-50:#EDF7FF; --deep-950:#052645; --night-990:#020915; --border:#DCE6EF; --sunken:#F4F8FB; --muted:#5A6B7D;
+  --page:#061425; --panel:#0E2542; --panel-line:#2F4F76; --on-dark:#FFFFFF; --on-dark-soft:#D9E6F2; --on-dark-muted:#B7C6D6;
+  --ok:#7BE0B0;
+  --cover:linear-gradient(135deg,#2E52A0 0%,#132E5D 45%,#020915 100%);
+  --navy-grad:linear-gradient(180deg,#2F4F76 0%,#142E4F 100%);
+  --sans:Montserrat,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+html,body{height:auto}
+body{background:var(--page);color:var(--on-dark-soft);font-family:var(--sans);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:16px;padding-block:20px 48px;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 16px}
+.top h1{margin:0;font-size:17px;font-weight:600;color:var(--on-dark)}
+.top p{margin:0;font-size:13px;color:var(--on-dark-muted)}
+
+/* stage */
+.frame{container-type:inline-size;position:relative;width:100%;aspect-ratio:16/9;max-width:100%;overflow:hidden;border-radius:10px;background:var(--night-990);box-shadow:0 30px 70px rgba(1,16,33,.55)}
+.stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0}
+.slide{position:absolute;inset:0;overflow:hidden;background:#fff;color:var(--navy-700);opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s .5s}
+.slide.active{opacity:1;visibility:visible;transition:opacity .5s ease}
+.slide.cover{background:var(--cover);color:var(--on-dark)}
+.slide.navy{background:var(--navy-grad);color:var(--on-dark)}
+.slide em{font-style:normal;color:var(--blue-500)}
+.slide.cover em,.slide.navy em{color:var(--cyan-400)}
+.logo{position:absolute;left:120px;top:100px;height:72px;max-width:none}
+.logo.corner{left:auto;right:120px;top:72px;height:52px}
+.mark{position:absolute;right:-120px;bottom:-160px;height:900px;max-width:none;opacity:.035}
+.main{position:absolute;left:120px;right:120px;top:190px;display:flex;flex-direction:column;gap:40px}
+.main.mid{top:50%;transform:translateY(-50%)}
+.eyebrow{align-self:flex-start;font-size:20px;line-height:24px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:8px 20px;border-radius:6px;border:1.5px solid currentColor;color:var(--cyan-400)}
+.title{margin:0;font-size:88px;line-height:96px;font-weight:700;max-width:1400px;text-wrap:balance}
+.heading{margin:0;font-size:56px;line-height:66px;font-weight:700;color:var(--navy-900);text-wrap:balance;max-width:1400px}
+.cover .heading,.navy .heading{color:var(--on-dark)}
+.sub{margin:0;font-size:36px;line-height:50px;font-weight:500;max-width:1200px}
+.body{margin:0;font-size:30px;line-height:44px;max-width:1180px}
+.bar{position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--navy-900);color:var(--on-dark);display:flex;align-items:center;justify-content:space-between;padding:0 120px;font-size:20px}
+.bar span:last-child{opacity:.75}
+.src{font-size:18px;line-height:24px;color:var(--muted)}
+.navy .src,.cover .src{color:var(--on-dark-muted)}
+
+/* cue-driven reveal: an element with data-at enters on a spring when the narration reaches that point; render() sets its opacity and transform from the clock */
+.cue{will-change:opacity,transform}
+
+/* slide 2: diff */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start}
+.device{background:#0B1B30;border-radius:16px;padding:36px 40px;font-family:var(--mono);font-size:25px;line-height:44px;color:#C9D7E6;box-shadow:0 24px 60px rgba(20,46,79,.25)}
+.device div{white-space:pre;padding:0 14px;border-radius:6px}
+.device .del{background:rgba(255,43,94,.16);color:#FFB3C5}
+.device .add{background:rgba(17,182,229,.16);color:#9BE3F7}
+.device .cap{font-family:var(--sans);font-size:18px;color:#8FA3B8;padding-top:14px}
+.callout{background:var(--ice-50);border-radius:16px;padding:32px 36px;font-size:30px;line-height:44px;color:var(--navy-900);font-weight:500}
+.stack{display:flex;flex-direction:column;gap:28px}
+
+/* slide 3: trail */
+.trail{width:1680px;height:430px}
+.trail .path{fill:none;stroke:var(--cyan-400);stroke-linecap:round;stroke-dasharray:2 16}
+.trail .short{stroke-width:5;opacity:.3}.trail .long{stroke-width:5;opacity:.3}
+.trail .ant{fill:var(--on-dark)}
+.trail text{fill:var(--on-dark-soft);font-family:var(--sans);font-size:24px;font-weight:600}
+.trail .node{fill:var(--deep-950);stroke:var(--cyan-400);stroke-width:3}
+
+/* slide 4: two traces */
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:40px 44px;box-shadow:0 6px 24px rgba(20,46,79,.08);display:flex;flex-direction:column;gap:18px}
+.card h3{margin:0;font-size:34px;line-height:42px;font-weight:700;color:var(--navy-900)}
+.card p{margin:0;font-size:26px;line-height:38px}
+.card .says{font-size:22px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#0F6FC0}
+.card.key{background:var(--navy-900);border-color:var(--navy-900);color:var(--on-dark-soft)}
+.card.key h3{color:var(--on-dark)}.card.key .says{color:var(--cyan-400)}
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.chips span{font-size:21px;font-weight:500;padding:6px 16px;border-radius:6px;background:var(--sunken);color:var(--navy-700)}
+.card.key .chips span{background:#1B3A60;color:var(--on-dark-soft)}
+
+/* slide 5: stats */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:10px;padding:36px 36px 32px;box-shadow:0 6px 24px rgba(20,46,79,.08);display:flex;flex-direction:column;gap:14px}
+.stat b{font-size:92px;line-height:96px;font-weight:600;color:var(--blue-500);font-variant-numeric:tabular-nums}
+.stat span{font-size:25px;line-height:36px;color:var(--navy-700)}
+.stat small{font-size:18px;line-height:24px;color:var(--muted)}
+
+/* slide 6: steps */
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.step{background:#fff;border:1px solid var(--border);border-radius:10px;padding:32px;box-shadow:0 6px 24px rgba(20,46,79,.08);display:flex;flex-direction:column;gap:14px}
+.step i{font-style:normal;width:56px;height:56px;border-radius:50%;background:var(--blue-500);color:#fff;font-size:26px;font-weight:700;display:grid;place-items:center}
+.step h3{margin:0;font-size:30px;line-height:38px;color:var(--navy-900)}
+.step p{margin:0;font-size:23px;line-height:34px}
+.step.key{background:var(--navy-900);border-color:var(--navy-900);color:var(--on-dark-soft)}
+.step.key h3{color:var(--on-dark)}.step.key i{background:var(--cyan-400);color:var(--navy-900)}
+
+/* slide 7: check */
+.opts{display:flex;flex-direction:column;gap:20px;max-width:1300px}
+.opt{font:inherit;font-size:30px;line-height:40px;font-weight:500;text-align:left;color:var(--on-dark);background:#1B3A60;border:2px solid var(--navy-700);border-radius:10px;padding:26px 32px;cursor:pointer;display:flex;gap:22px;align-items:center}
+.opt:hover:not(:disabled){border-color:var(--cyan-400)}
+.opt:focus-visible{outline:4px solid var(--cyan-400);outline-offset:4px}
+.opt b{flex:none;width:48px;height:48px;border-radius:50%;border:2px solid var(--cyan-400);color:var(--cyan-400);display:grid;place-items:center;font-size:22px}
+.opt{transition:opacity .3s,border-color .3s,background .3s}
+.opt:disabled{cursor:default}
+.opt.right{border-color:var(--ok);background:#123E4A}.opt.right b{border-color:var(--ok);background:var(--ok);color:#06231A}
+.opt.wrong{border-color:var(--alert-500);background:#3A1A33}.opt.wrong b{border-color:var(--alert-500);background:var(--alert-500);color:#fff}
+.opt.dim{opacity:.4}
+.opt b svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.fb{max-width:1300px}.fb:empty{display:none}
+.fb .res{display:flex;gap:24px;align-items:flex-start;padding:22px 30px;border-radius:12px;font-size:26px;line-height:38px;color:var(--on-dark-soft);border:2px solid}
+.fb .res strong{display:block;font-size:30px;line-height:40px;color:var(--on-dark)}
+.fb .res.ok{background:rgba(123,224,176,.13);border-color:var(--ok)}
+.fb .res.no{background:rgba(255,43,94,.12);border-color:var(--alert-500)}
+.fb .res.hint{align-items:center;border-color:var(--cyan-400);background:rgba(17,182,229,.1);font-size:28px;color:var(--on-dark)}
+.fb .ic{flex:none;width:48px;height:48px;border-radius:50%;display:grid;place-items:center;margin-top:-2px}
+.fb .ic svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.res.ok .ic{background:var(--ok);color:#06231A}.res.no .ic{background:var(--alert-500);color:#fff}
+.nextbar{display:flex;align-items:center;gap:22px;max-width:1300px;font-size:24px;line-height:30px;font-weight:500;color:var(--on-dark-muted)}
+.nextbar i{flex:1;height:8px;border-radius:4px;background:var(--navy-700);position:relative;overflow:hidden}
+.nextbar i::before{content:"";position:absolute;inset:0;background:var(--cyan-400);transform-origin:left;transform:scaleX(0)}
+.nextbar.run i::before{animation:nextfill var(--ms,4500ms) linear forwards}
+@keyframes nextfill{to{transform:scaleX(1)}}
+
+/* slide 8 */
+.asks{display:flex;flex-direction:column;gap:18px;margin:0;padding:0;list-style:none}
+.asks li{font-size:34px;line-height:46px;font-weight:500;display:flex;gap:20px;align-items:baseline}
+.asks li::before{content:"";flex:none;width:14px;height:14px;border-radius:50%;border:3px solid var(--cyan-400);transform:translateY(-3px)}
+
+/* start overlay */
+.gate{position:absolute;inset:0;display:grid;place-items:center;background:rgba(2,9,21,.62);z-index:5}
+.end{position:absolute;inset:0;display:grid;place-items:center;background:rgba(2,9,21,.82);z-index:6;container-type:inline-size}
+.endcard{display:flex;flex-direction:column;align-items:center;gap:1.2em;text-align:center;padding:0 5%}
+.endcard h2{margin:0;font-size:clamp(20px,5cqw,56px);line-height:1.15;font-weight:700;color:var(--on-dark)}
+.endcard p{margin:0;font-size:clamp(13px,2.4cqw,28px);line-height:1.4;color:var(--on-dark-soft);max-width:34em}
+.endcard p:empty{display:none}
+.endcard p b{color:var(--ok);font-weight:600}
+.end button,.gate button{font:inherit;font-size:clamp(14px,2.2vw,20px);font-weight:600;color:#fff;background:var(--blue-500);border:0;border-radius:999px;padding:.8em 1.8em;cursor:pointer;display:flex;align-items:center;gap:.6em}
+.gate button:focus-visible,.end button:focus-visible,.ctl button:focus-visible,.seg:focus-visible,summary:focus-visible{outline:2px solid var(--cyan-400);outline-offset:2px}
+
+/* captions + controls */
+.cc{position:absolute;left:50%;bottom:7.5%;transform:translateX(-50%);width:84%;z-index:4;pointer-events:none;text-align:center;font-size:clamp(11px,2.3cqw,32px);line-height:1.75;font-weight:600;color:#fff;text-wrap:balance}
+.cc span{background:rgba(2,9,21,.82);padding:.12em .65em;border-radius:.35em;-webkit-box-decoration-break:clone;box-decoration-break:clone;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.cc:empty{display:none}
+.ctl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px}
+.ctl .transport button,.ctl .tools button{font:inherit;color:var(--on-dark);background:var(--panel);border:1px solid var(--panel-line);border-radius:6px;padding:0;cursor:pointer;width:40px;height:40px;display:grid;place-items:center;flex:none}
+.ctl svg{width:20px;height:20px;fill:currentColor;display:block}
+.transport{display:flex;align-items:center;gap:8px}
+.tools{display:flex;align-items:center;gap:8px;margin-left:auto}
+.ctl .transport button:hover,.ctl .tools button:hover{border-color:var(--cyan-400)}
+#ccb[aria-pressed="true"]{background:var(--navy-700);border-color:var(--cyan-400)}
+#mute[aria-pressed="true"] .v-on,#mute[aria-pressed="false"] .v-off{display:none}
+.ctl .transport .play{background:var(--blue-500);border-color:var(--blue-500);width:48px;height:48px;border-radius:50%}
+.ctl .transport .play svg{width:22px;height:22px}
+.segs{flex:1 1 260px;min-width:0;display:flex;gap:4px;align-items:center}
+.seg{flex:1;height:22px;padding:8px 0;background:none;border:0;cursor:pointer;min-height:0}
+.seg span{display:block;height:6px;border-radius:3px;background:var(--navy-700);overflow:hidden}
+.seg span i{display:block;height:100%;width:0;background:var(--cyan-400)}
+.time{font-size:13px;font-variant-numeric:tabular-nums;color:var(--on-dark-muted);white-space:nowrap}
+
+
+@media (prefers-reduced-motion:reduce){
+  .slide{transition:none}
+  .nextbar.run i::before{animation:none;transform:scaleX(1)}
+  .trail .ant{display:none}
+}
+</style>
+
+<div class="wrap">
+  <div class="top">
+    <h1>Narrated lesson, proof of concept</h1>
+    <p>Sample content from a Wawandco post.</p>
+  </div>
+
+  <div class="frame" id="frame">
+    <div class="stage" id="stage">
+
+      <section class="slide cover active" data-dur="11.51" aria-label="Slide 1">
+        <img class="mark" src="img/icon-white.png" alt="">
+        <img class="logo" src="img/logo-reversed.png" alt="Symbol Security">
+        <div class="main mid">
+          <span class="eyebrow cue" data-at="0">Sample lesson</span>
+          <h2 class="title cue" data-at=".08">Leave a Trace. <em>Let It Fade.</em></h2>
+          <p class="sub cue" data-at=".45">How teams and coding agents coordinate through what they write down.</p>
+        </div>
+      </section>
+
+      <section class="slide" data-dur="18.2" aria-label="Slide 2">
+        <img class="logo corner" src="img/logo-main.png" alt="Symbol Security">
+        <div class="main">
+          <h2 class="heading cue" data-at="0">A clean pull request, a <em>missing reason</em></h2>
+          <div class="split">
+            <div class="device cue" data-at=".12">
+              <div>func handleWebhook(e Event) error {</div>
+              <div class="del cue" data-at=".3">-   for try := 0; try &lt; 3; try++ {</div>
+              <div class="del cue" data-at=".3">-     if seen(e.ID) { return nil }</div>
+              <div class="del cue" data-at=".3">-   }</div>
+              <div class="add cue" data-at=".42">+   return client.Process(e)</div>
+              <div>}</div>
+              <div class="cap">Illustration of the change described in the story</div>
+            </div>
+            <div class="stack">
+              <p class="body cue" data-at=".5">The retry loop was there on purpose, after the payment provider sent duplicate events during an incident.</p>
+              <div class="callout cue" data-at=".8">The agent read everything the repository offered. The repository didn't say why.</div>
+            </div>
+          </div>
+        </div>
+        <div class="bar"><span>symbolsecurity.com</span><span>Sample lesson · 2</span></div>
+      </section>
+
+      <section class="slide navy" data-dur="21.78" aria-label="Slide 3">
+        <img class="logo corner" src="img/logo-reversed.png" alt="Symbol Security">
+        <div class="main" style="gap:24px">
+          <h2 class="heading cue" data-at="0">Stigmergy: coordination through <em>traces</em></h2>
+          <p class="body cue" data-at=".1">One worker's action leaves a mark in a shared environment. The mark prompts the next worker's action.</p>
+          <svg class="trail cue" id="trail" data-at=".28" viewBox="0 0 1680 430" role="img" aria-label="Two ant trails between a nest and food. The shorter trail grows stronger and the longer one fades.">
+            <path id="pShort" class="path short" d="M150 150 Q840 20 1530 150" fill="none"/>
+            <path id="pLong" class="path long" d="M150 150 C380 500 1300 500 1530 150" fill="none"/>
+            <circle class="node" cx="150" cy="150" r="34" fill="#052645"/><circle class="node" cx="1530" cy="150" r="34" fill="#052645"/>
+            <text x="150" y="230" text-anchor="middle">Nest</text><text x="1530" y="230" text-anchor="middle">Food</text>
+            <g id="ants"></g>
+          </svg>
+          <p class="src cue" data-at=".6">Grassé, 1959 · Goss et al., 1989 · Heylighen, 2016</p>
+        </div>
+      </section>
+
+      <section class="slide" data-dur="20.15" aria-label="Slide 4">
+        <img class="logo corner" src="img/logo-main.png" alt="Symbol Security">
+        <div class="main">
+          <h2 class="heading cue" data-at="0">Two kinds of trace live in your <em>repository</em></h2>
+          <div class="pair">
+            <div class="card cue" data-at=".18">
+              <span class="says">Says what</span>
+              <h3>The work itself</h3>
+              <p>The work is the signal. It says exactly what the system does.</p>
+              <div class="chips"><span>Code</span><span>Tests</span><span>Schemas</span><span>Folder structure</span></div>
+            </div>
+            <div class="card key cue" data-at=".52">
+              <span class="says">Says why</span>
+              <h3>Markers left for others</h3>
+              <p>A separate signal that carries the reasoning code can't.</p>
+              <div class="chips"><span>Decision records</span><span>Commit messages</span><span>PR descriptions</span><span>Runbooks</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="bar"><span>symbolsecurity.com</span><span>Sample lesson · 4</span></div>
+      </section>
+
+      <section class="slide" data-dur="27.07" aria-label="Slide 5">
+        <img class="logo corner" src="img/logo-main.png" alt="Symbol Security">
+        <div class="main">
+          <h2 class="heading cue" data-at="0">More traces is not a <em>better trail</em></h2>
+          <div class="stats">
+            <div class="stat cue" data-at=".16"><b data-count="23" data-pre="20–" data-suf="%">20–23%</b><span>higher inference cost with AI-generated context files, with no gain in task success.</span><small>(Gloaguen et al., ETH Zurich, 2026)</small></div>
+            <div class="stat cue" data-at=".48"><b data-count="28.9" data-dec="1" data-suf="%">28.9%</b><span>of the 1,000 most-starred projects referenced code elements that no longer existed.</span><small>(Tan, Wagner and Treude, 2024)</small></div>
+            <div class="stat cue" data-at=".76"><b data-count="4.7" data-dec="1">4.7</b><span>years, on average, that those outdated references had been sitting there.</span><small>(Tan, Wagner and Treude, 2024)</small></div>
+          </div>
+        </div>
+        <div class="bar"><span>symbolsecurity.com</span><span>Sample lesson · 5</span></div>
+      </section>
+
+      <section class="slide" data-dur="16.57" aria-label="Slide 6">
+        <img class="logo corner" src="img/logo-main.png" alt="Symbol Security">
+        <div class="main">
+          <h2 class="heading cue" data-at="0">Trails fade. Design for <em>evaporation</em></h2>
+          <div class="steps">
+            <div class="step cue" data-at=".3"><i>1</i><h3>Supersede</h3><p>A reversed decision stays in the log, marked superseded, with a link to its replacement.</p></div>
+            <div class="step cue" data-at=".46"><i>2</i><h3>Delete plans</h3><p>Once the work ships, archive the spec or remove it.</p></div>
+            <div class="step cue" data-at=".6"><i>3</i><h3>Garden</h3><p>Scan on a schedule for docs that no longer match the code.</p></div>
+            <div class="step key cue" data-at=".76"><i>4</i><h3>Reinforce</h3><p>Strengthen the traces people and agents keep needing.</p></div>
+          </div>
+        </div>
+        <div class="bar"><span>symbolsecurity.com</span><span>Sample lesson · 6</span></div>
+      </section>
+
+      <section class="slide navy" data-dur="7.19" data-check="1" aria-label="Slide 7">
+        <img class="logo corner" src="img/logo-reversed.png" alt="Symbol Security">
+        <div class="main" style="gap:24px">
+          <span class="eyebrow cue" data-at="0">Quick check</span>
+          <h2 class="heading cue" data-at=".1">Which trace would have told the agent <em>why</em> the retry loop existed?</h2>
+          <div class="opts cue" data-at=".5" id="opts">
+            <button class="opt" id="opt-a" data-k="a"><b>A</b>The code and its tests</button>
+            <button class="opt" id="opt-b" data-k="b"><b>B</b>An architecture decision record</button>
+            <button class="opt" id="opt-c" data-k="c"><b>C</b>A generated overview of the repository</button>
+          </div>
+          <div class="fb" id="fb" aria-live="polite"></div>
+          <div class="nextbar" id="nextbar" hidden><span>Continuing to the next slide</span><i></i></div>
+        </div>
+      </section>
+
+      <section class="slide cover" data-dur="11.28" aria-label="Slide 8">
+        <img class="mark" src="img/icon-white.png" alt="">
+        <img class="logo" src="img/logo-reversed.png" alt="Symbol Security">
+        <div class="main mid">
+          <ul class="asks">
+            <li class="cue" data-at=".1">Does it change what the next reader does?</li>
+            <li class="cue" data-at=".36">Does it explain a why the code can't?</li>
+          </ul>
+          <h2 class="title cue" data-at=".62" style="font-size:76px;line-height:86px">The colony doesn't remember. <em>The trail does.</em></h2>
+        </div>
+      </section>
+
+    </div>
+    <div class="cc" id="cc" aria-live="off"></div>
+    <div class="end" id="end" hidden><div class="endcard"><h2>End of presentation</h2><p id="endmsg"></p><button id="replay" type="button"><span aria-hidden="true">↻</span> Replay presentation</button></div></div>
+    <div class="gate" id="gate"><button id="start" type="button"><span aria-hidden="true">▶</span> Start presentation with sound</button></div>
+  </div>
+
+
+  <div class="ctl">
+    <div class="transport">
+      <button id="prev" type="button" aria-label="Previous slide" title="Previous slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h2.5v14H6zM20 5.5v13a.5.5 0 0 1-.8.4L10 12.4a.5.5 0 0 1 0-.8l9.2-6.5a.5.5 0 0 1 .8.4z"/></svg></button>
+      <button class="play" id="play" type="button" aria-label="Play" title="Play"></button>
+      <button id="next" type="button" aria-label="Next slide" title="Next slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 5H18v14h-2.5zM4 5.5v13a.5.5 0 0 0 .8.4l9.2-6.5a.5.5 0 0 0 0-.8L4.8 5.1a.5.5 0 0 0-.8.4z"/></svg></button>
+    </div>
+    <div class="segs" id="segs"></div>
+    <span class="time" id="time">0:00 / 0:00</span>
+    <div class="tools">
+      <button id="ccb" type="button" aria-pressed="true" aria-label="Captions" title="Captions"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm5.2 5.3a2.4 2.4 0 0 0-3.8 1.9v1.6a2.4 2.4 0 0 0 3.8 1.9l-.9-1.4a.9.9 0 0 1-1.4-.5v-1.6a.9.9 0 0 1 1.4-.5zm7 0a2.4 2.4 0 0 0-3.8 1.9v1.6a2.4 2.4 0 0 0 3.8 1.9l-.9-1.4a.9.9 0 0 1-1.4-.5v-1.6a.9.9 0 0 1 1.4-.5z"/></svg></button>
+      <button id="mute" type="button" aria-pressed="false" aria-label="Mute" title="Mute"><svg class="v-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5v5h3.6l4.9 4V5.5l-4.9 4zM14.5 8.6a5 5 0 0 1 0 6.8l-1.3-1.3a3.1 3.1 0 0 0 0-4.2zM17.3 5.8a9 9 0 0 1 0 12.4l-1.3-1.3a7.1 7.1 0 0 0 0-9.8z"/></svg><svg class="v-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9.5v5h3.6l4.9 4V5.5l-4.9 4zM14.2 9.6l1.4-1.4 2.2 2.2 2.2-2.2 1.4 1.4-2.2 2.2 2.2 2.2-1.4 1.4-2.2-2.2-2.2 2.2-1.4-1.4 2.2-2.2z"/></svg></button>
+    </div>
+  </div>
+
+</div>
+
+<audio id="au" preload="auto"></audio>
+
+<script>
+(function(){
+var SCRIPT=[
+ ["An agent opens a pull request that quietly reverts a decision your team made on purpose.","Nobody wrote down why.","This lesson is about the traces we leave."],
+ ["The pull request looks clean. Tests pass.","The agent removed a strange retry loop around the payment webhook.","That loop was there on purpose, after an incident with duplicate events.","The reason lived in a chat thread. The repository didn't say why."],
+ ["Biologists call this stigmergy: coordination through traces left in a shared environment.","Foraging ants lay pheromone as they walk and follow the strongest trail.","Ants on the shorter route rebuild their trail faster, so the colony converges on it.","No ant knows the map. The trail does."],
+ ["Your repository holds two kinds of trace.","The work itself is a signal: code, tests, schemas. It says exactly what the system does.","Markers are separate signals left for others: decision records, commit messages, runbooks.","They carry the why that code can't."],
+ ["More traces is not a better trail.","In a 2026 study, AI-generated context files raised inference cost by 20 to 23 percent without improving success.","Another study found 28.9 percent of the 1,000 most-starred projects referenced code that no longer existed.","Those references had been outdated for 4.7 years on average."],
+ ["Ant trails fade, and that is the feature. Design for it.","Supersede decisions instead of deleting them.","Delete plans when the work ships.","Garden your docs on a schedule.","And reinforce the traces people and agents keep using."],
+ ["Quick check. An engineer leaves the team.","Which trace would have told the agent why the retry loop existed?"],
+ ["Before you leave a trace, ask: does it change what the next reader does?","Does it explain a why the code can't?","The colony doesn't remember. The trail does."]
+];
+var $=function(id){return document.getElementById(id)};
+var slides=[].slice.call(document.querySelectorAll('.slide'));
+var durs=slides.map(function(s){return +s.dataset.dur});
+var total=durs.reduce(function(a,b){return a+b},0);
+var au=$('au'),stage=$('stage'),frame=$('frame'),cc=$('cc');
+var sw=null,FB=4500,GAP=1400,LEAD=700,cur=0,t=0,playing=false,audioOK=true,last=0,ended=false,answered=false,score=null,started=false,capsOn=true,done=false;
+var reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+// caption timings: measured from each slide's narration clip.
+var CAPS=[[[0.0, 5.72], [6.17, 7.8], [8.05, 10.91]], [[0.0, 3.04], [3.37, 7.54], [7.86, 12.71], [13.04, 17.6]], [[0.0, 6.18], [6.56, 11.52], [11.96, 17.3], [17.74, 21.18]], [[0.0, 2.66], [2.87, 9.95], [10.39, 16.38], [16.82, 19.55]], [[0.0, 2.3], [2.62, 12.63], [13.23, 21.37], [21.7, 26.47]], [[0.0, 4.18], [4.5, 7.28], [7.61, 9.67], [9.79, 11.66], [11.94, 15.97]], [[0.0, 2.38], [2.71, 6.59]], [[0.0, 4.28], [4.46, 7.01], [7.34, 10.68]]];
+var caps=SCRIPT.map(function(lines,i){return lines.map(function(l,j){return{a:CAPS[i][j][0],b:CAPS[i][j][1]+.3,text:l}})});
+
+function fit(){stage.style.transform='scale('+frame.clientWidth/1920+')'}
+if(window.ResizeObserver)new ResizeObserver(fit).observe(frame);window.addEventListener('resize',fit);fit();
+
+// progress segments
+SCRIPT.forEach(function(l,i){
+ var b=document.createElement('button');b.className='seg';b.type='button';b.style.flexGrow=durs[i];b.setAttribute('aria-label','Go to slide '+(i+1));b.innerHTML='<span><i></i></span>';b.onclick=function(){go(i,true)};$('segs').appendChild(b)});
+var fills=[].slice.call(document.querySelectorAll('.seg i'));
+
+// ants: positions and trail strength are pure functions of the slide clock, so they pause, seek and replay with the narration
+var pS=$('pShort'),pL=$('pLong'),lenS=pS.getTotalLength(),lenL=pL.getTotalLength(),antList=[];
+(function(){var g=$('ants'),ns='http://www.w3.org/2000/svg';
+ function ant(path,len,period,off,cls){var c=document.createElementNS(ns,'circle');c.setAttribute('r',7);c.setAttribute('class','ant '+cls);c.setAttribute('fill','#fff');g.appendChild(c);antList.push({c:c,path:path,len:len,period:period,off:off,cls:cls})}
+ for(var i=0;i<6;i++)ant(pS,lenS,3.2,i/6,'s');
+ for(var j=0;j<4;j++)ant(pL,lenL,6.4,j/4,'l');
+})();
+function drawTrail(clock,d){
+ var k=spring(clock-.58*d-.3);
+ pS.style.strokeWidth=5+6*k;pS.style.opacity=.3+.7*k;pL.style.opacity=.3-.2*k;
+ pS.style.strokeDashoffset=-clock*34;pL.style.strokeDashoffset=-clock*14*(1-.7*k);
+ antList.forEach(function(a){var u=((clock/a.period+a.off)%1+1)%1,pt=a.path.getPointAtLength(u*a.len);a.c.setAttribute('cx',pt.x);a.c.setAttribute('cy',pt.y);a.c.style.opacity=a.cls==='l'?1-.85*k:1});
+}
+
+// closed-form step response of a damped spring: 0 at tau<=0, settles at 1 (slight overshoot)
+function spring(tau){if(tau<=0)return 0;if(reduce)return 1;var w=2*Math.PI*1.5,z=.74,wd=w*Math.sqrt(1-z*z),e=Math.exp(-z*w*tau);return 1-e*(Math.cos(wd*tau)+z*w/wd*Math.sin(wd*tau))}
+var CUE_LEAD=.4;
+function applyCue(c,tau,st){
+ if(tau>2||(st&&!started)){c.style.opacity='';c.style.transform=''}
+ else{var x=spring(tau);c.style.opacity=Math.min(1,Math.max(0,x*1.6));c.style.transform='translateY('+((1-x)*34).toFixed(2)+'px)'}
+ if(tau>0&&!c._on){c._on=true;c.querySelectorAll('[data-count]').forEach(count)}
+}
+function fmt(s){s=Math.max(0,Math.floor(s));return Math.floor(s/60)+':'+('0'+s%60).slice(-2)}
+
+var PLAYICON={"Play": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M8 5.2v13.6a.6.6 0 0 0 .9.5l11-6.8a.6.6 0 0 0 0-1l-11-6.8a.6.6 0 0 0-.9.5z\"/></svg>", "Pause": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M6 5h4v14H6zM14 5h4v14h-4z\"/></svg>", "Replay": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M12 5V2L7 6.5 12 11V8a5 5 0 1 1-5 5H5a7 7 0 1 0 7-8z\"/></svg>"};
+function setPlay(k){var b=$('play');b.innerHTML=PLAYICON[k];b.setAttribute('aria-label',k);b.title=k}
+function setCC(x){x=x||'';if(cc._t===x)return;cc._t=x;cc.textContent='';if(x){var sp=document.createElement('span');sp.textContent=x;cc.appendChild(sp)}}
+function setSrc(i){ended=false;audioOK=true;au.src='audio/s'+('0'+(i+1)).slice(-2)+'.mp3';try{au.load()}catch(e){}}
+au.addEventListener('error',function(){audioOK=false});
+au.addEventListener('ended',function(){finishSlide()});
+
+function go(i,user){
+ if(i<0||i>=slides.length)return;
+ $('end').hidden=true;$('nextbar').hidden=true;
+ clearTimeout(sw);setCC('');
+ if(user&&done){done=false;setPlay('Play')}
+ slides[cur].classList.remove('active');cur=i;t=0;slides[cur].classList.add('active');
+ slides[cur].querySelectorAll('.cue').forEach(function(c){c._counted=false;c._on=false});
+ setSrc(i);
+ if(started){;if(playing){t=-LEAD/1000;clearTimeout(sw);sw=setTimeout(function(){if(playing)startAudio()},LEAD)}}
+ render();
+}
+function startAudio(){if(!audioOK)return;var p=au.play();if(p&&p.catch)p.catch(function(){audioOK=false})}
+function resetQuiz(){answered=false;score=null;$('fb').textContent='';$('nextbar').hidden=true;[].forEach.call($('opts').children,function(o){o.disabled=false;o.classList.remove('right','wrong','dim');o.firstChild.textContent=o.dataset.k.toUpperCase()})}
+function play(){if(done){done=false;resetQuiz();go(0)}playing=true;last=performance.now();setPlay('Pause');if(t<=0){t=-LEAD/1000;clearTimeout(sw);sw=setTimeout(function(){if(playing)startAudio()},LEAD)}else startAudio()}
+function pause(){playing=false;clearTimeout(sw);$('nextbar').hidden=true;au.pause();setPlay('Play')}
+function finishSlide(){
+ if(ended)return;ended=true;t=durs[cur];render();
+ if(slides[cur].dataset.check){if(!answered){pause();setCC('');$('fb').innerHTML='<div class="res hint">Select an answer to continue.</div>'}else startNext(cur);return}
+ var from=cur;clearTimeout(sw);setCC('');
+ sw=setTimeout(function(){if(cur!==from||!playing)return;if(cur<slides.length-1){go(cur+1)}else{complete()}},GAP);
+}
+function complete(){pause();done=true;setPlay('Replay');setCC('');
+ $('endmsg').innerHTML=score===null?'':(score?'Knowledge check: <b>correct</b>.':'Knowledge check: incorrect. The answer was B, an architecture decision record.');
+ $('end').hidden=false;$('replay').focus({preventScroll:true});
+}
+
+function count(el){if(el._counted)return;el._counted=true;if(reduce)return;
+ var end=+el.dataset.count,dec=+(el.dataset.dec||0),pre=el.dataset.pre||'',suf=el.dataset.suf||'',t0=performance.now();
+ (function step(now){var k=Math.max(0,Math.min(1,(now-t0)/900)),e=1-Math.pow(1-k,3);el.textContent=pre+(end*e).toFixed(dec)+suf;if(k<1)requestAnimationFrame(step)})(t0)}
+
+function render(){
+ var d=durs[cur],p=Math.max(0,Math.min(1,t/d));
+ var pre=!started&&cur===0;
+ slides[cur].querySelectorAll('.cue').forEach(function(c){applyCue(c,pre?9:t+CUE_LEAD-(+c.dataset.at)*d,pre)});
+ if(cur===2)drawTrail(Math.max(0,t),d);
+ fills.forEach(function(f,i){f.style.width=(i<cur?100:i===cur?p*100:0)+'%'});
+ var before=0;for(var i=0;i<cur;i++)before+=durs[i];$('time').textContent=fmt(before+t)+' / '+fmt(total);
+ if(started&&!ended&&capsOn&&!(answered&&slides[cur].dataset.check)){var line=caps[cur].filter(function(c){return t>=c.a&&t<c.b})[0];if(line)setCC(line.text)}
+}
+function tick(now){
+ if(playing&&!ended){
+  if(audioOK&&!au.paused&&isFinite(au.currentTime)){t=au.currentTime}else if(!audioOK){t+=(now-last)/1000}else if(t<0){t=Math.min(0,t+(now-last)/1000)}
+  if(!audioOK&&t>=durs[cur])finishSlide();else render();
+ }
+ last=now;requestAnimationFrame(tick);
+}
+
+$('start').onclick=function(){started=true;$('gate').hidden=true;;;go(0);play()};
+$('play').onclick=function(){if(!started){$('start').click();return}playing?pause():(ended&&!done?(slides[cur].dataset.check&&!answered?0:finishAgain()):play())};
+function finishAgain(){ended=false;if(cur<slides.length-1){playing=true;setPlay('Pause');go(cur+1)}else complete()}
+$('replay').onclick=function(){$('play').click()};
+$('prev').onclick=function(){go(cur-1,true)};
+$('next').onclick=function(){if(cur<slides.length-1)go(cur+1,true)};
+$('mute').onclick=function(){au.muted=!au.muted;this.setAttribute('aria-pressed',au.muted);var l=au.muted?'Unmute':'Mute';this.setAttribute('aria-label',l);this.title=l};
+$('ccb').onclick=function(){capsOn=!capsOn;this.setAttribute('aria-pressed',capsOn);var l=capsOn?'Hide captions':'Show captions';this.setAttribute('aria-label',l);this.title=l;cc.hidden=!capsOn};
+var CHECK='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',CROSS='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',WHY='Code says what the system does. A decision record keeps the constraints and the rejected alternatives.';
+function startNext(from){clearTimeout(sw);var nb=$('nextbar');nb.style.setProperty('--ms',FB+'ms');nb.hidden=false;nb.classList.remove('run');void nb.offsetWidth;nb.classList.add('run');
+ sw=setTimeout(function(){if(cur===from&&playing)finishAgain()},FB)}
+$('opts').addEventListener('click',function(e){var b=e.target.closest('.opt');if(!b||answered)return;answered=true;score=b.dataset.k==='b'?1:0;
+ [].forEach.call(this.children,function(o){o.disabled=true;
+  if(o.dataset.k==='b'){o.classList.add('right');o.firstChild.innerHTML=CHECK}else if(o===b){o.classList.add('wrong');o.firstChild.innerHTML=CROSS}else o.classList.add('dim')});
+ $('fb').innerHTML=score?'<div class="res ok"><span class="ic">'+CHECK+'</span><div><strong>Correct. A decision record is the right trace.</strong>'+WHY+'</div></div>':'<div class="res no"><span class="ic">'+CROSS+'</span><div><strong>Not quite. The answer is B, an architecture decision record.</strong>'+WHY+'</div></div>';
+ setCC('');if(ended){playing=true;setPlay('Pause');startNext(cur)}});
+document.addEventListener('keydown',function(e){if(e.target.closest('button,summary,a,input'))return;
+ if(e.key===' '){e.preventDefault();$('play').click()}else if(e.key==='ArrowRight')$('next').click();else if(e.key==='ArrowLeft')$('prev').click()});
+
+setPlay('Play');setSrc(0);render();requestAnimationFrame(tick);
+})();
+</script>
+
+</body></html>
